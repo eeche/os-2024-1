@@ -122,7 +122,7 @@ search <파일이름>               - 파일을 찾아서 경로를 출력합니
 mv <파일이름/폴더이름> <경로>    - 파일이나 폴더를 이동합니다.
 list                            - 현재 경로 내의 모든 파일 및 폴더를 출력합니다.
 help                            - 도움말을 출력합니다.
-exit                            - 프로그램을 종료 합니다.
+exit                            - 프로그램을 종료합니다.
         """
         show_custom_messagebox(root, "도움말", help_text, width=800, height=250)
 
