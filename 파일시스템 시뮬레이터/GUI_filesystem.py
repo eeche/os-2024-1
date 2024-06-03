@@ -1,7 +1,40 @@
 import os
 import shutil
 import tkinter as tk
-from tkinter import messagebox, simpledialog
+from tkinter import messagebox, Toplevel, Text, Button, Scrollbar, VERTICAL
+
+
+class CustomMessageBox(Toplevel):
+    def __init__(self, parent, title, message, width=300, height=200):
+        super().__init__(parent)
+
+        self.title(title)
+
+        self.geometry(f"{width}x{height}")
+
+        self.message_text = Text(self, wrap="word", width=width, height=height)
+        self.message_text.insert("1.0", message)
+        self.message_text.config(state="disabled")
+        self.message_text.pack(pady=10)
+
+        scrollbar = Scrollbar(self, orient=VERTICAL,
+                              command=self.message_text.yview)
+        scrollbar.pack(side="right", fill="y")
+        self.message_text.config(yscrollcommand=scrollbar.set)
+
+        button_frame = tk.Frame(self)
+        button_frame.pack(pady=10)
+
+        ok_button = Button(button_frame, text="OK", command=self.destroy)
+        ok_button.pack()
+
+        self.transient(parent)
+        self.grab_set()
+        parent.wait_window(self)
+
+
+def show_custom_messagebox(parent, title, message, width=300, height=200):
+    CustomMessageBox(parent, title, message, width, height)
 
 
 class FileSystemSimulatorGUI:
@@ -13,14 +46,12 @@ class FileSystemSimulatorGUI:
         self.create_main_menu()
 
     def create_main_menu(self):
-        # Clear any existing frames
         for widget in self.root.winfo_children():
             widget.destroy()
 
         self.main_menu_frame = tk.Frame(self.root)
         self.main_menu_frame.pack(pady=20, padx=20)
 
-        # Main menu buttons
         buttons = [
             ("파일 생성", self.create_file, 0, 0),
             ("파일 삭제", self.delete_file, 0, 1),
@@ -41,7 +72,6 @@ class FileSystemSimulatorGUI:
                                text=text, width=20, command=command)
             button.grid(row=row, column=column, pady=5, padx=5, sticky="nsew")
 
-        # Make all columns expand equally
         for column in range(2):
             self.main_menu_frame.grid_columnconfigure(column, weight=1)
 
@@ -80,24 +110,23 @@ class FileSystemSimulatorGUI:
 
     def show_help(self):
         help_text = """
-        명령어 목록
-        create <파일이름> <내용>        - 새 파일을 생성을 생성합니다. 파일이름과 내용 입력이 필수적입니다.
-        delete <파일이름>               - 파일을 삭제합니다.
-        read <파일이름>                 - 파일을 읽어와서 출력합니다.
-        write <파일이름> <내용>         - 파일에 추가합니다. 존재하지 않는 파일일 경우에 새로 파일을 생성할 수 있습니다.
-        mkdir <폴더이름>                - 새 폴더를 생성합니다.
-        rmdir <폴더이름>                - 폴더를 삭제합니다.
-        cd <경로>                       - 경로를 이동합니다.
-        search <파일이름>               - 파일을 찾아서 경로를 출력합니다.
-        mv <파일이름/폴더이름> <경로>    - 파일이나 폴더를 이동합니다.
-        list                            - 현재 경로 내의 모든 파일 및 폴더를 출력합니다.
-        help                            - 도움말을 출력합니다.
-        exit                            - 프로그램을 종료 합니다.
+명령어 목록
+create <파일이름> <내용>        - 새 파일을 생성을 생성합니다. 파일이름과 내용 입력이 필수적입니다.
+delete <파일이름>               - 파일을 삭제합니다.
+read <파일이름>                 - 파일을 읽어와서 출력합니다.
+write <파일이름> <내용>         - 파일에 추가합니다. 존재하지 않는 파일일 경우에 새로 파일을 생성할 수 있습니다.
+mkdir <폴더이름>                - 새 폴더를 생성합니다.
+rmdir <폴더이름>                - 폴더를 삭제합니다.
+cd <경로>                       - 경로를 이동합니다.
+search <파일이름>               - 파일을 찾아서 경로를 출력합니다.
+mv <파일이름/폴더이름> <경로>    - 파일이나 폴더를 이동합니다.
+list                            - 현재 경로 내의 모든 파일 및 폴더를 출력합니다.
+help                            - 도움말을 출력합니다.
+exit                            - 프로그램을 종료 합니다.
         """
-        messagebox.showinfo("도움말", help_text)
+        show_custom_messagebox(root, "도움말", help_text, width=800, height=250)
 
     def open_input_window(self, title, operation, is_move=False):
-        # Clear any existing frames
         for widget in self.root.winfo_children():
             widget.destroy()
 
@@ -131,8 +160,9 @@ class FileSystemSimulatorGUI:
     def perform_operation(self):
         name = self.name_entry.get()
         content = self.content_text.get("1.0", tk.END) if hasattr(
-            self, 'content_text') else None
-        dest = self.dest_entry.get() if hasattr(self, 'dest_entry') else None
+            self, 'content_text') and self.content_text.winfo_exists() else None
+        dest = self.dest_entry.get() if hasattr(
+            self, 'dest_entry') and self.dest_entry.winfo_exists() else None
 
         if name:
             if dest:
@@ -176,7 +206,7 @@ class FileSystemSimulatorGUI:
         else:
             with open(name, 'a') as f:
                 f.write('\n' + content.strip())
-            messagebox.showinfo(f"파일 '{name}'이 수정되었습니다.")
+            messagebox.showinfo("성공", f"파일 '{name}'이 수정되었습니다.")
 
     def create_directory_operation(self, name, _):
         original_dirname = name
@@ -200,7 +230,7 @@ class FileSystemSimulatorGUI:
         try:
             os.chdir(name)
             self.current_dir = os.getcwd()
-            messagebox.showinfo(f"'{self.current_dir}'로 이동했습니다.")
+            messagebox.showinfo("성공", f"'{self.current_dir}'로 이동했습니다.")
         except FileNotFoundError:
             messagebox.showerror("에러", f"에러: 경로 '{name}'가 없습니다.")
 
