@@ -65,6 +65,10 @@ class FileSystemSimulatorCLI:
             print(f"'{self.current_dir}'로 이동했습니다.")
         except FileNotFoundError:
             print(f"에러: 경로 '{dirname}'가 없습니다.")
+        except NotADirectoryError:
+            print(f"에러: '{dirname}'는 디렉토리가 아닙니다.")
+        except Exception as e:
+            print(f"에러: {e}")
 
     def search_file(self, filename):
         found = False
@@ -79,7 +83,7 @@ class FileSystemSimulatorCLI:
     def move(self, src, dst):
         try:
             shutil.move(src, dst)
-            print(f"'{src}'를 '{self}'에서 '{dst}'로 이동합니다.")
+            print(f"'{src}'를 '{self.current_dir}'에서 '{dst}'로 이동합니다.")
         except FileNotFoundError:
             print(f"에러: '{src}'를 찾지 못했습니다.")
         except Exception as e:
