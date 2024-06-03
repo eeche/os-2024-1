@@ -106,7 +106,7 @@ class FileSystemSimulatorGUI:
         files = os.listdir(self.current_dir)
         file_list = "\n".join(files)
         messagebox.showinfo(
-            "Directory List", f"현재 경로: {self.current_dir}\n{file_list}")
+            "목록", f"현재 경로: {self.current_dir}\n{file_list}")
 
     def show_help(self):
         help_text = """
