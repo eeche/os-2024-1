@@ -57,7 +57,8 @@ class FileSystemSimulatorGUI:
             ("파일 삭제", self.delete_file, 0, 1),
             ("파일 읽기", self.read_file, 1, 0),
             ("파일 쓰기", self.write_file, 1, 1),
-            ("파일 찾기", self.search_file, 2, 0),
+            ("파일 수정", self.edit_file, 2, 0),  # Added this line
+            ("파일 찾기", self.search_file, 2, 1),
             ("폴더 생성", self.create_directory, 3, 0),
             ("폴더 삭제", self.delete_directory, 3, 1),
             ("경로 이동", self.change_directory, 4, 1),
@@ -87,6 +88,9 @@ class FileSystemSimulatorGUI:
     def write_file(self):
         self.open_input_window("파일 쓰기", self.write_file_operation)
 
+    def edit_file(self):
+        self.open_input_window("파일 수정", self.edit_file_operation)
+
     def search_file(self):
         self.open_input_window("파일 찾기", self.search_file_operation)
 
@@ -111,22 +115,23 @@ class FileSystemSimulatorGUI:
     def show_help(self):
         help_text = """
 명령어 목록
-create <파일이름> <내용>        - 새 파일을 생성을 생성합니다. 파일이름과 내용 입력이 필수적입니다.
-delete <파일이름>               - 파일을 삭제합니다.
-read <파일이름>                 - 파일을 읽어와서 출력합니다.
-write <파일이름> <내용>         - 파일에 추가합니다. 존재하지 않는 파일일 경우에 새로 파일을 생성할 수 있습니다.
-mkdir <폴더이름>                - 새 폴더를 생성합니다.
-rmdir <폴더이름>                - 폴더를 삭제합니다.
-cd <경로>                       - 경로를 이동합니다.
-search <파일이름>               - 파일을 찾아서 경로를 출력합니다.
-mv <파일이름/폴더이름> <경로>    - 파일이나 폴더를 이동합니다.
-list                            - 현재 경로 내의 모든 파일 및 폴더를 출력합니다.
-help                            - 도움말을 출력합니다.
-exit                            - 프로그램을 종료합니다.
+파일 생성               - 새 파일을 생성을 생성합니다. 파일이름과 내용 입력이 필수적입니다.
+파일 삭제               - 파일을 삭제합니다.
+파일 읽기               - 파일을 읽어와서 출력합니다.
+파일 쓰기               - 파일에 추가합니다. 존재하지 않는 파일일 경우에 새로 파일을 생성할 수 있습니다.
+파일 수정               - 파일을 읽어와서 수정합니다.
+폴더 생성               - 새 폴더를 생성합니다.
+폴더 삭제               - 폴더를 삭제합니다.
+경로 이동               - 경로를 이동합니다.
+파일 찾기               - 파일을 찾아서 경로를 출력합니다.
+파일/폴더 이동          - 파일이나 폴더를 이동합니다.
+파일/폴더 목록 보기     - 현재 경로 내의 모든 파일 및 폴더를 출력합니다.
+도움말                  - 도움말을 출력합니다.
+종료                    - 프로그램을 종료합니다.
         """
         show_custom_messagebox(root, "도움말", help_text, width=800, height=250)
 
-    def open_input_window(self, title, operation, is_move=False):
+    def open_input_window(self, title, operation, is_move=False, content=""):
         for widget in self.root.winfo_children():
             widget.destroy()
 
@@ -146,11 +151,12 @@ exit                            - 프로그램을 종료합니다.
             self.dest_entry = tk.Entry(self.input_frame, width=50)
             self.dest_entry.grid(row=1, column=1, pady=5, padx=5)
 
-        if title in ["파일 생성", "파일 쓰기"]:
+        if title in ["파일 생성", "파일 쓰기", "파일 수정하기"]:
             tk.Label(self.input_frame, text="내용").grid(
                 row=2, column=0, sticky='nw')
             self.content_text = tk.Text(self.input_frame, width=50, height=10)
             self.content_text.grid(row=2, column=1, pady=5, padx=5)
+            self.content_text.insert("1.0", content)
 
         tk.Button(self.input_frame, text="뒤로가기", command=self.create_main_menu).grid(
             row=3, column=0, pady=5)
@@ -207,6 +213,22 @@ exit                            - 프로그램을 종료합니다.
             with open(name, 'a') as f:
                 f.write('\n' + content.strip())
             messagebox.showinfo("성공", f"파일 '{name}'이 수정되었습니다.")
+
+    def edit_file_operation(self, name, _):
+        try:
+            with open(name, 'r') as f:
+                content = f.read()
+            self.open_input_window(
+                "파일 수정하기", self.edit_file_save_operation, content=content)
+            self.name_entry.insert(0, name)
+            self.content_text.insert(1, content)
+        except FileNotFoundError:
+            messagebox.showerror("에러", f"에러: 파일 '{name}'이 없습니다.")
+
+    def edit_file_save_operation(self, name, content):
+        with open(name, 'w') as f:
+            f.write(content.strip())
+        messagebox.showinfo("성공", f"파일 '{name}'이 수정되었습니다.")
 
     def create_directory_operation(self, name, _):
         original_dirname = name
